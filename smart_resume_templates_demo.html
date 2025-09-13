@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Smart Resume Builder — Templates Gallery (Demo)</title>
+
+<!-- Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+  :root{--bg:#f6fafb;--card:#fff;--accent:#0ea5a4;--muted:#6b7280}
+  body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);margin:0;color:#0f172a}
+  .container{max-width:1200px;margin:18px auto;display:grid;grid-template-columns:360px 1fr 420px;gap:16px;padding:8px}
+  header{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;padding:10px 6px}
+  .card{background:var(--card);border-radius:10px;padding:12px;box-shadow:0 6px 18px rgba(10,20,30,0.06)}
+  label{display:block;font-weight:600;margin-top:10px}
+  input,select,textarea,button{width:100%;padding:9px;border-radius:8px;border:1px solid #e6eef6;margin-top:6px;font-size:14px;box-sizing:border-box}
+  textarea{min-height:80px;resize:vertical}
+  .small{font-size:13px;color:var(--muted)}
+  .btn{padding:10px;border-radius:8px;border:0;cursor:pointer}
+  .primary{background:var(--accent);color:white}
+  .tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .templates{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .tmpl{width:46%;border:1px solid #eef6f7;border-radius:8px;padding:8px;cursor:pointer;background:#fff}
+  .tmpl.selected{outline:3px solid rgba(14,165,164,0.18)}
+  .tmpl h4{margin:6px 0}
+  .previewWrap{height:78vh;overflow:auto;padding:12px}
+  .previewBox{background:white;padding:18px;border-radius:8px;min-height:500px;max-width:800px;margin:0 auto;box-shadow:0 6px 20px rgba(2,6,23,0.06)}
+  .previewBox[contenteditable="true"]{outline:2px dashed rgba(14,165,164,0.08)}
+  .row{display:flex;gap:8px}
+  .col{display:flex;flex-direction:column;gap:8px}
+  .muted{color:var(--muted);font-size:13px}
+  @media (max-width:1100px){.container{grid-template-columns:1fr;}.previewWrap{height:40vh}}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h2 style="margin:0">Smart Resume Builder — Demo</h2>
+      <div class="small">Three categories • Template gallery • India-market-aware enhancements • Editable preview</div>
+    </div>
+    <div class="small">Demo (no servers). I can wire server/LLM integrations next.</div>
+  </header>
+
+  <!-- LEFT: Input form & AI tools -->
+  <aside class="card">
+    <h3 style="margin:0">1. Profile & Category</h3>
+    <label>Full name</label><input id="name" value="Alex Kumar">
+    <label>Email</label><input id="email" value="alex@example.com">
+    <label>Phone</label><input id="phone" value="+91 90000 00000">
+    <label>Preferred cities (comma separated)</label><input id="cities" value="Bangalore, Hyderabad">
+
+    <label>Category</label>
+    <select id="category" onchange="onCategorySelect()">
+      <option value="internship">Internship</option>
+      <option value="fresher" selected>Fresher</option>
+      <option value="experienced">Experienced</option>
+    </select>
+
+    <div id="internshipFields" style="display:none">
+      <label>Education</label><textarea id="education_intern">B.Tech - Computer Science, XYZ College (2024)</textarea>
+      <label>Projects / Contributions</label><textarea id="projects_intern">Built a campus placement portal using React.</textarea>
+      <label>Internship Experience</label><textarea id="internships">Summer intern – ABC Corp (2 months)</textarea>
+      <label>Skills</label><input id="skills_intern" value="JavaScript, React, HTML, CSS">
+    </div>
+
+    <div id="fresherFields">
+      <label>Education</label><textarea id="education_fresher">B.Tech - Computer Science, XYZ College (2024)</textarea>
+      <label>Projects</label><textarea id="projects_fresher">E-commerce web app; College research project on ML.</textarea>
+      <label>Certifications</label><textarea id="certs_fresher">AWS Cloud Practitioner</textarea>
+      <label>Skills</label><input id="skills_fresher" value="Python, SQL, Pandas, Machine Learning">
+    </div>
+
+    <div id="experiencedFields" style="display:none">
+      <label>Work Experience (company - role - duration)</label><textarea id="experience_exp">ABC Tech — Software Engineer — 2019–2024\nLed a team of 3 to build APIs.</textarea>
+      <label>Achievements</label><textarea id="achievements_exp">Reduced processing time by 30%.</textarea>
+      <label>Skills</label><input id="skills_exp" value="Java, Spring, Microservices, SQL">
+    </div>
+
+    <label>Extra (Certs / Languages / Links)</label><textarea id="extra">GitHub: github.com/alex</textarea>
+
+    <div style="margin-top:8px">
+      <label><input id="indiaOpt" type="checkbox" checked> Optimize for Indian job market (keyword emphasis)</label>
+    </div>
+
+    <div class="tools">
+      <button class="btn primary" onclick="autoEnhance()">Auto‑Enhance</button>
+      <button class="btn" onclick="insertActionVerbs()">Insert Action Verbs</button>
+      <button class="btn" onclick="marketTips()">Market Tips</button>
+      <button class="btn" onclick="populatePreview()">Populate Preview</button>
+    </div>
+
+    <div style="margin-top:10px">
+      <small class="muted">Auto‑Enhance rewrites summary & project lines using local heuristics. Always verify & edit the preview before exporting.</small>
+    </div>
+  </aside>
+
+  <!-- MIDDLE: Template gallery & preview selection -->
+  <main class="card">
+    <h3 style="margin:0">2. Pick a Template</h3>
+    <div class="templates" id="templateGallery">
+      <!-- thumbnails -->
+    </div>
+
+    <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+      <label style="margin:0;width:120px">Selected template:</label>
+      <div id="selectedTemplate" class="muted">Minimal</div>
+      <div style="flex:1"></div>
+      <select id="pageSize"><option value="a4">A4</option><option value="letter">Letter</option></select>
+    </div>
+
+    <hr style="margin:12px 0">
+    <h3 style="margin:0">3. Preview (Editable)</h3>
+    <div class="previewWrap">
+      <div id="previewBox" class="previewBox" contenteditable="true"></div>
+    </div>
+  </main>
+
+  <!-- RIGHT: Editable raw text and export -->
+  <aside class="card">
+    <h3 style="margin:0">4. Edit / Export</h3>
+    <label>Editable resume text (you can change anything)</label>
+    <textarea id="editableText" style="min-height:220px"></textarea>
+
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn primary" onclick="exportPDF()">Download PDF</button>
+      <button class="btn" onclick="copyText()">Copy Text</button>
+      <button class="btn" onclick="resetAll()">Reset</button>
+    </div>
+
+    <hr>
+    <h4 style="margin:6px 0">Template previews (examples)</h4>
+    <small class="muted">Templates shown are demo layouts. Visual PDFs will be exported from the editable preview.</small>
+  </aside>
+</div>
+
+<script>
+// ------------ TEMPLATES (HTML fragments for different visual formats) -------------
+const TEMPLATES = {
+  minimal: (data) => `
+    <div style="font-family:Inter,Arial; color:#0f172a; max-width:760px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <h1 style="margin:0">${data.name}</h1>
+          <div style="color:#374151">${data.email} • ${data.phone}</div>
+        </div>
+        <div style="text-align:right;color:#6b7280">${data.cities}</div>
+      </div>
+      <hr style="border:none;border-top:1px solid #eef2f6;margin:12px 0">
+      ${data.summary ? `<h3 style="margin-bottom:6px">Summary</h3><div style="margin-bottom:10px">${data.summary}</div>` : ''}
+      ${data.skills ? `<h3 style="margin-bottom:6px">Skills</h3><div style="margin-bottom:10px">${data.skills}</div>` : ''}
+      ${data.section1Title ? `<h3 style="margin-bottom:6px">${data.section1Title}</h3><div style="margin-bottom:10px">${data.section1}</div>` : ''}
+      ${data.section2Title ? `<h3 style="margin-bottom:6px">${data.section2Title}</h3><div style="margin-bottom:10px">${data.section2}</div>` : ''}
+      ${data.extra ? `<h3 style="margin-bottom:6px">Extra</h3><div>${data.extra}</div>` : ''}
+    </div>`,
+  modern: (data) => `
+    <div style="font-family:Inter,Arial; color:#0f172a; max-width:760px">
+      <div style="background:#0ea5a4;color:white;padding:14px;border-radius:6px 6px 0 0;">
+        <h1 style="margin:0">${data.name}</h1>
+        <div style="opacity:0.95">${data.email} • ${data.phone}</div>
+      </div>
+      <div style="padding:14px;border:1px solid #eef6f7;border-top:0;border-radius:0 0 6px 6px">
+        ${data.summary ? `<h3 style="margin-bottom:6px">Profile</h3><div style="margin-bottom:10px">${data.summary}</div>` : ''}
+        <div style="display:flex;gap:18px">
+          <div style="flex:1">
+            ${data.section1Title ? `<h3 style="margin-bottom:6px">${data.section1Title}</h3><div>${data.section1}</div>` : ''}
+          </div>
+          <div style="width:220px;background:#f8fafb;padding:10px;border-radius:6px">
+            ${data.skills ? `<h4 style="margin-top:0">Skills</h4><div>${data.skills}</div>` : ''}
+            ${data.extra ? `<h4>Extra</h4><div style="font-size:13px">${data.extra}</div>`: ''}
+          </div>
+        </div>
+      </div>
+    </div>`,
+  professional: (data) => `
+    <div style="font-family:georgia,serif;color:#0f172a;max-width:760px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><h1 style="margin:0;font-family:georgia,serif">${data.name}</h1><div style="color:#374151">${data.email} • ${data.phone}</div></div>
+        <div style="text-align:right;color:#6b7280">${data.cities}</div>
+      </div>
+      <div style="margin-top:8px;padding:12px;background:#f3f6f8;border-radius:6px">
+        ${data.summary ? `<div style="font-style:italic">${data.summary}</div>` : ''}
+      </div>
+      <div style="margin-top:12px">
+        ${data.section1Title ? `<h3>${data.section1Title}</h3><div>${data.section1}</div>` : ''}
+        ${data.section2Title ? `<h3>${data.section2Title}</h3><div>${data.section2}</div>` : ''}
+        ${data.extra ? `<h3>Extra</h3><div>${data.extra}</div>` : ''}
+      </div>
+    </div>`,
+  creative: (data) => `
+    <div style="font-family:Inter,Arial;display:grid;grid-template-columns:1fr 260px;gap:14px;max-width:760px">
+      <div>
+        <h2 style="margin:0">${data.name}</h2>
+        <div style="color:#374151">${data.summary || ''}</div>
+        ${data.section1Title ? `<h3>${data.section1Title}</h3><div>${data.section1}</div>` : ''}
+      </div>
+      <aside style="background:#0ea5a4;color:white;padding:12px;border-radius:8px">
+        <div><strong>Contact</strong><div style="font-size:13px">${data.email}<br>${data.phone}</div></div>
+        <div style="margin-top:12px"><strong>Skills</strong><div style="font-size:13px">${data.skills}</div></div>
+        ${data.extra ? `<div style="margin-top:12px"><strong>Extra</strong><div style="font-size:13px">${data.extra}</div></div>` : ''}
+      </aside>
+    </div>`,
+  ats: (data) => `
+    <div style="font-family:Arial,Helvetica,sans-serif;color:#0f172a;max-width:760px">
+      <div><h1 style="margin:0">${data.name}</h1><div style="color:#374151">${data.email} • ${data.phone} • ${data.cities}</div></div>
+      ${data.summary ? `<div style="margin-top:10px">${data.summary}</div>`: ''}
+      <div style="margin-top:10px"><strong>Skills</strong><div>${data.skills}</div></div>
+      ${data.section1Title ? `<div style="margin-top:10px"><strong>${data.section1Title}</strong><div>${data.section1}</div></div>` : ''}
+      ${data.section2Title ? `<div style="margin-top:10px"><strong>${data.section2Title}</strong><div>${data.section2}</div></div>` : ''}
+      ${data.extra ? `<div style="margin-top:10px"><strong>Extra</strong><div>${data.extra}</div></div>` : ''}
+    </div>`
+};
+
+// Populate template thumbnails in gallery
+const galleryEl = document.getElementById('templateGallery');
+const tmplKeys = Object.keys(TEMPLATES);
+let selectedTemplateKey = 'minimal';
+
+function makeThumbnail(key){
+  const el = document.createElement('div');
+  el.className = 'tmpl';
+  el.dataset.key = key;
+  el.innerHTML = `<h4 style="margin:0">${key[0].toUpperCase()+key.slice(1)}</h4><div class="small">Preview sample</div><div style="margin-top:8px;font-size:12px;color:#475569">One-page ${key} style</div>`;
+  el.onclick = ()=>{ selectTemplate(key); };
+  return el;
+}
+
+tmplKeys.forEach(k => galleryEl.appendChild(makeThumbnail(k)));
+selectTemplate(selectedTemplateKey);
+
+// ----------------- Category logic -----------------
+function onCategorySelect(){
+  const cat = document.getElementById('category').value;
+  document.getElementById('internshipFields').style.display = (cat==='internship') ? 'block':'none';
+  document.getElementById('fresherFields').style.display = (cat==='fresher') ? 'block':'none';
+  document.getElementById('experiencedFields').style.display = (cat==='experienced') ? 'block':'none';
+}
+
+// ----------------- Heuristics / Simple AI-like enhancement -----------------
+const marketKeywords = {
+  domains: ['e-commerce','fintech','saas','edtech','healthtech','startups'],
+  verbs: ['Implemented','Developed','Designed','Optimized','Engineered','Automated','Led','Collaborated']
+};
+
+function enhanceLine(line){
+  if(!line) return line;
+  // if contains percent or number, add impact phrasing
+  if(/\d+%|\d+\s?(users|revenue|time|days|months)/i.test(line)){
+    if(!/impact|delivered|result/i.test(line)) return `${line.replace(/\.$/,'')} — delivered measurable outcomes.`;
+  }
+  if(line.split(/\s+/).length < 6){
+    const v = marketKeywords.verbs[Math.floor(Math.random()*marketKeywords.verbs.length)];
+    return `${v} ${line}`;
+  }
+  // ensure starts with strong verb
+  if(!new RegExp('^(' + marketKeywords.verbs.join('|') + ')','i').test(line)){
+    const v = marketKeywords.verbs[Math.floor(Math.random()*marketKeywords.verbs.length)];
+    return `${v} ${line}`;
+  }
+  return line;
+}
+
+function autoEnhance(){
+  const cat = document.getElementById('category').value;
+  let data = collectData(cat, /*enhance=*/true);
+  // Build text and preview
+  buildEditableFromData(data);
+}
+
+// Insert action verbs snippet
+function insertActionVerbs(){
+  const snippet = marketKeywords.verbs.join(', ') + '\\n';
+  const cat = document.getElementById('category').value;
+  if(cat==='internship') document.getElementById('projects_intern').value = snippet + document.getElementById('projects_intern').value;
+  if(cat==='fresher') document.getElementById('projects_fresher').value = snippet + document.getElementById('projects_fresher').value;
+  if(cat==='experienced') document.getElementById('experience_exp').value = snippet + document.getElementById('experience_exp').value;
+  alert('Action verbs inserted at top of your projects/experience field.');
+}
+
+function marketTips(){
+  alert('India market tips:\\n• Mention preferred cities (Bangalore/Hyderabad/Mumbai/Pune).\\n• Add measurable outcomes (% improvement, users, revenue).\\n• For internships and freshers, show projects, open-source, and certifications.');
+}
+
+// ----------------- Data collection & mapping to templates -----------------
+function collectData(category, enhance=false){
+  const name = document.getElementById('name').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const cities = document.getElementById('cities').value.trim();
+  let data = {name, email, phone, cities, summary:'', skills:'', extra:''};
+  if(category==='internship'){
+    let edu = document.getElementById('education_intern').value.trim();
+    let projects = document.getElementById('projects_intern').value.trim();
+    let internships = document.getElementById('internships').value.trim();
+    let skills = document.getElementById('skills_intern').value.trim();
+    if(enhance){
+      projects = projects.split(/[\n\r]+/).map(enhanceLine).join('\\n');
+      internships = internships.split(/[\n\r]+/).map(enhanceLine).join('\\n');
+    }
+    data.summary = `Aspiring intern with strong foundations in ${skills.split(',').slice(0,3).join(', ')}.`;
+    data.skills = skills;
+    data.section1Title = 'Projects';
+    data.section1 = projects;
+    data.section2Title = 'Internships';
+    data.section2 = internships;
+    data.extra = document.getElementById('extra').value.trim();
+  } else if(category==='fresher'){
+    let edu = document.getElementById('education_fresher').value.trim();
+    let projects = document.getElementById('projects_fresher').value.trim();
+    let certs = document.getElementById('certs_fresher').value.trim();
+    let skills = document.getElementById('skills_fresher').value.trim();
+    if(enhance){
+      projects = projects.split(/[\n\r]+/).map(enhanceLine).join('\\n');
+    }
+    data.summary = `Recent graduate with knowledge in ${skills.split(',').slice(0,3).join(', ')} and hands-on project experience.`;
+    data.skills = skills;
+    data.section1Title = 'Education & Projects';
+    data.section1 = edu + '\\n\\n' + projects;
+    data.section2Title = 'Certifications';
+    data.section2 = certs;
+    data.extra = document.getElementById('extra').value.trim();
+  } else {
+    let exp = document.getElementById('experience_exp').value.trim();
+    let ach = document.getElementById('achievements_exp').value.trim();
+    let skills = document.getElementById('skills_exp').value.trim();
+    if(enhance){
+      exp = exp.split(/[\n\r]+/).map(enhanceLine).join('\\n\\n');
+      ach = ach.split(/[\n\r]+/).map(enhanceLine).join('\\n');
+    }
+    data.summary = `Seasoned professional with ${document.getElementById('years') ? document.getElementById('years').value + '+' : ''} years of experience.`;
+    data.skills = skills;
+    data.section1Title = 'Work Experience';
+    data.section1 = exp;
+    data.section2Title = 'Achievements';
+    data.section2 = ach;
+    data.extra = document.getElementById('extra').value.trim();
+  }
+  return data;
+}
+
+// Build the editable text area and render selected template into previewBox
+function buildEditableFromData(data){
+  // Render template HTML into preview
+  const html = TEMPLATES[selectedTemplateKey](data);
+  const previewBox = document.getElementById('previewBox');
+  previewBox.innerHTML = html;
+  // Also set editable text (a simple plain-text serialized form)
+  const text = [
+    `Name: ${data.name}`,
+    `${data.email} | ${data.phone}`,
+    '',
+    'SUMMARY',
+    data.summary || '',
+    '',
+    'SKILLS',
+    data.skills || '',
+    '',
+    data.section1Title || '',
+    data.section1 || '',
+    '',
+    data.section2Title || '',
+    data.section2 || '',
+    '',
+    'EXTRA',
+    data.extra || ''
+  ].join('\\n');
+  document.getElementById('editableText').value = text;
+  // Make the preview editable (contenteditable already enabled) — user may modify visual content directly
+}
+
+// Template selection logic
+function selectTemplate(key){
+  selectedTemplateKey = key;
+  document.getElementById('selectedTemplate').innerText = key[0].toUpperCase()+key.slice(1);
+  // mark selected in gallery visuals
+  document.querySelectorAll('.tmpl').forEach(t=> t.classList.toggle('selected', t.dataset.key===key));
+  // repopulate preview with current data
+  populatePreview();
+}
+
+// Populate preview from current form (without enhancement)
+function populatePreview(){
+  const cat = document.getElementById('category').value;
+  const data = collectData(cat, /*enhance=*/false);
+  buildEditableFromData(data);
+}
+
+// Export: convert previewBox (visual) to PDF using html2canvas + jsPDF
+async function exportPDF(){
+  // copy current editable text into preview if changed
+  const ed = document.getElementById('editableText').value;
+  // If user edited plain text, update preview by simple mapping: replace sections in preview
+  // For demo reliability, we'll render the previewBox DOM to canvas
+  const previewEl = document.getElementById('previewBox');
+  // Ensure a white background for canvas capture
+  previewEl.style.background = '#fff';
+  const canvas = await html2canvas(previewEl, {scale:2, useCORS:true, allowTaint:true});
+  const imgData = canvas.toDataURL('image/png');
+  const pdf = new jspdf.jsPDF({unit:'px', format:document.getElementById('pageSize').value==='a4' ? [595,842] : [612,792]});
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  // Fit image to page width while keeping aspect ratio
+  const imgProps = {width: canvas.width, height: canvas.height};
+  const ratio = Math.min(pageWidth / imgProps.width, pageHeight / imgProps.height);
+  const imgWidth = imgProps.width * ratio;
+  const imgHeight = imgProps.height * ratio;
+  pdf.addImage(imgData, 'PNG', (pageWidth - imgWidth)/2, 20, imgWidth, imgHeight);
+  const fname = (document.getElementById('name').value || 'resume').replace(/\s+/g,'_') + '_template.pdf';
+  pdf.save(fname);
+}
+
+// Copy text to clipboard
+function copyText(){ const t = document.getElementById('editableText'); t.select(); document.execCommand('copy'); alert('Copied text to clipboard'); }
+
+// Reset everything to defaults
+function resetAll(){
+  document.getElementById('name').value='Alex Kumar';
+  document.getElementById('email').value='alex@example.com';
+  document.getElementById('phone').value='+91 90000 00000';
+  document.getElementById('cities').value='Bangalore, Hyderabad';
+  document.getElementById('category').value='fresher';
+  onCategorySelect();
+  document.getElementById('education_fresher').value='B.Tech - Computer Science, XYZ College (2024)';
+  document.getElementById('projects_fresher').value='E-commerce web app; College research project on ML.';
+  document.getElementById('certs_fresher').value='AWS Cloud Practitioner';
+  document.getElementById('skills_fresher').value='Python, SQL, Pandas, Machine Learning';
+  document.getElementById('extra').value='GitHub: github.com/alex';
+  populatePreview();
+}
+
+// Initialize UI: set thumbnails and populate preview
+(function init(){
+  // Add thumbnails title text
+  document.querySelectorAll('.tmpl').forEach(t=>{});
+  // mark first two thumbs visually
+  Array.from(document.querySelectorAll('.tmpl')).forEach((el,i)=>{
+    if(el.dataset.key===selectedTemplateKey) el.classList.add('selected');
+  });
+  // Ensure templates in gallery show keys (we added thumbnails earlier)
+  // Populate preview with defaults
+  populatePreview();
+})();
+
+</script>
+</body>
+</html>
